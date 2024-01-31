@@ -1,13 +1,45 @@
-const express = require("express");
-const { createServer } = require("http");
-const { Server } = require("socket.io");
-
+const express = require('express');
 const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, { /* options */ });
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 
-io.on("connection", (socket) => {
-  // ...
+app.use(express.static('public'));
+
+const usernames = [];
+
+io.on('connection', (socket) => {
+  console.log('a user connected');
+
+  // Add user to usernames array
+  usernames.push(socket.id);
+  io.emit('usernames', usernames);
+
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+
+    // Remove user from usernames array
+    const index = usernames.indexOf(socket.id);
+    if (index !== -1) {
+      usernames.splice(index, 1);
+      io.emit('usernames', usernames);
+    }
+  });
+
+  socket.on('chat message', (msg) => {
+    io.emit('chat message', msg);
+  });
+
+  socket.on('username', (username) => {
+    const index = usernames.indexOf(socket.id);
+    if (index !== -1) {
+      usernames[index] = username;
+      io.emit('usernames', usernames);
+    }
+  });
 });
 
-httpServer.listen(3000);
+const PORT = process.env.PORT || 3000;
+
+http.listen(PORT, () => {
+  console.log(`listening on *:${PORT}`);
+});

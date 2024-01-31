@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <style>
+        #messages {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid black;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="usernames"></div>
+    <input id="username-input" type="text" placeholder="Enter your username...">
+    <div id="messages"></div>
+    <input id="message-input" type="text" placeholder="Type your message...">
+    <input id="recipient-input" type="text" placeholder="Enter recipient's username...">
+    <button id="send-button">Send</button>
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:3000'); // Add the URL of your server here
+        const messagesDiv = document.getElementById('messages');
+        const usernamesDiv = document.getElementById('usernames');
+        const usernameInput = document.getElementById('username-input');
+        const messageInput = document.getElementById('message-input');
+        const recipientInput = document.getElementById('recipient-input');
+        const sendButton = document.getElementById('send-button');
+
+        socket.on('usernames', (usernames) => {
+            usernamesDiv.innerHTML = '';
+            usernames.forEach((username) => {
+                const usernameElement = document.createElement('p');
+                usernameElement.textContent = username;
+                usernamesDiv.appendChild(usernameElement);
+            });
+        });
+
+        usernameInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                socket.emit('username', usernameInput.value);
+                usernameInput.value = '';
+            }
+        });
+
+        sendButton.addEventListener('click', () => {
+            const recipient = recipientInput.value;
+            const msg = messageInput.value;
+            if (recipient && msg) {
+                socket.emit('private message', { recipient, msg });
+                messageInput.value = '';
+                recipientInput.value = '';
+            }
+        });
+
+        socket.on('chat message', (msg) => {
+            const messageElement = document.createElement('p');
+            messageElement.textContent = msg;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+
+        socket.on('private message', (data) => {
+            const { recipient, msg } = data;
+            if (recipient === recipientInput.value) {
+                const messageElement = document.createElement('p');
+                messageElement.textContent = `Private message from ${users[socket.id]}: ${msg}`;
+                messagesDiv.appendChild(messageElement);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        });
+    </script>
+</body>
+
+</html>
