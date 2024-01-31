@@ -10,14 +10,12 @@ const usernames = [];
 io.on('connection', (socket) => {
   console.log('a user connected');
 
-  // Add user to usernames array
   usernames.push(socket.id);
   io.emit('usernames', usernames);
 
   socket.on('disconnect', () => {
     console.log('user disconnected');
 
-    // Remove user from usernames array
     const index = usernames.indexOf(socket.id);
     if (index !== -1) {
       usernames.splice(index, 1);
